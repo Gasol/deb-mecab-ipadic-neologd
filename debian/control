@@ -1,15 +1,16 @@
 Source: mecab-ipadic-neologd
-Section: unknown
+Section: text
 Priority: optional
 Maintainer: Gasol Wu <gasol.wu@gmail.com>
-Build-Depends: debhelper (>= 9)
+Build-Depends: debhelper (>= 9), mecab, libmecab-dev, patch
 Standards-Version: 3.9.5
-Homepage: <insert the upstream URL, if relevant>
-#Vcs-Git: git://anonscm.debian.org/collab-maint/mecab-ipadic-neologd.git
-#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/mecab-ipadic-neologd.git;a=summary
+Homepage: https://github.com/neologd/mecab-ipadic-neologd
+Vcs-Git: git@github.com:neologd/mecab-ipadic-neologd.git
+Vcs-Browser: https://github.com/neologd/mecab-ipadic-neologd
 
 Package: mecab-ipadic-neologd
 Architecture: all
-Depends: ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Depends: ${misc:Depends}, mecab
+Description: Neologism dictionary for MeCab
+ This dictionary includes many neologisms (new word), which are extracted
+ from many language resources on the Web.
