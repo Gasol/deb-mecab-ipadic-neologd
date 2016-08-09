@@ -25,18 +25,11 @@ GREP_OPTIONS=""
 
 echo "$ECHO_PREFIX Start.."
 
-YMD=`ls -ltr \`find ${BASEDIR}/../seed/mecab-user-dict-seed.*.csv.xz\` | egrep -o '[0-9]{8}' | tail -1`
-if [ ! -e ${BASEDIR}/../build/mecab-ipadic-2.7.0-20070801-neologd-${YMD} ]; then
-    echo "${ECHO_PREFIX} ${BASEDIR}/../build/mecab-ipadic-2.7.0-20070801-neologd-${YMD} isn't there."
-    echo "${ECHO_PREFIX} You should execute libexec/make-mecab-ipadic-neologd.sh first."
-    exit 1
-fi
-
-BUILT_DIC_DIR=${BASEDIR}/../build/mecab-ipadic-2.7.0-20070801-neologd-${YMD}
+BUILT_DIC_DIR=${BASEDIR}/../ipadic
 
 MECAB_PATH=`which mecab`
 MECAB_DIC_DIR=`${MECAB_PATH}-config --dicdir`
-INSTALL_DIR_PATH=${MECAB_DIC_DIR}/mecab-ipadic-neologd
+INSTALL_DIR_PATH=${MECAB_DIC_DIR}/ipadic-neologd
 INSTALL_AS_USER=0
 INSTALL_AS_SUDOER=0
 
