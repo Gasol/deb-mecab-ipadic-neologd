@@ -7,3 +7,6 @@ mecab-ipadic-neologd_0.0.5.orig.tar.gz
 8080bc6c8f8db289c588ff1b1159e7b9758546ac
 50093937
 component:0d9d021853ba4bb4adfa782ea450e55bfe1a229b:12208105:mecab-ipadic-neologd_0.0.5.orig-ipadic.tar.gz
+debianTag="debian/%e%v"
+patchedTag="patched/%e%v"
+upstreamTag="upstream/%e%u"
