@@ -1,5 +1,5 @@
-mecab-ipadic-neologd (0.0.5-1) unstable; urgency=low
+mecab-ipadic-neologd (0.0.5-1ppa1~trusty) trusty; urgency=low
 
   * Initial release
 
- -- Gasol Wu <gasol.wu@gmail.com>  Tue, 09 Aug 2016 12:40:54 +0800
+ -- Gasol Wu <gasol.wu@gmail.com>  Thu, 11 Aug 2016 12:21:21 +0800
