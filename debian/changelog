@@ -1,3 +1,9 @@
+mecab-ipadic-neologd (0.0.5-1bintray2~stretch) stretch; urgency=low
+
+  * Remove empty directory /usr/lib/mecab/dic/ipadic-neologd
+
+ -- Gasol Wu <gasol.wu@gmail.com>  Mon, 20 Aug 2018 10:05:06 +0800
+
 mecab-ipadic-neologd (0.0.5-1bintray1~stretch) stretch; urgency=low
 
   * Release for Debian 9
