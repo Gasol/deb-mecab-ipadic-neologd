@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (C) 2015-2016 Toshinori Sato (@overlast)
+# Copyright (C) 2015-2018 Toshinori Sato (@overlast)
 #
 #       https://github.com/neologd/mecab-ipadic-neologd
 #
@@ -21,6 +21,7 @@ set -u
 
 BASEDIR=$(cd $(dirname $0);pwd)
 ECHO_PREFIX="[merge-ext-columns-using-git] :"
+GREP_OPTIONS=""
 
 EXT_COLUMN_URL_CSV=$1
 
@@ -73,6 +74,14 @@ do
     EXT_COLUMN_URL=${EXT_COLUMN_URL_ARR[${I}]}
     EXT_COLUMN_REPO_NAME=${EXT_COLUMN_URL##*/}
     EXT_COLUMN_REPO_NAME=${EXT_COLUMN_REPO_NAME%%\.git}
+
+    if [[ ! ${EXT_COLUMN_URL} =~ "^https?://" ]] && [[ ! ${EXT_COLUMN_URL} =~ "/"  ]]; then
+        if [[ ! ${EXT_COLUMN_URL} =~ "^ext-column-" ]]; then
+            EXT_COLUMN_URL="https://github.com/neologd/ext-column-"${EXT_COLUMN_URL_ARR[${I}]}
+        else
+            EXT_COLUMN_URL="https://github.com/neologd/"${EXT_COLUMN_URL_ARR[${I}]}
+        fi
+    fi
 
     if [ -d ${NEOLOGD_BUILD_DIR}/${EXT_COLUMN_REPO_NAME} ]; then
         echo "$ECHO_PREFIX Update a column extension of ${EXT_COLUMN_REPO_NAME}"

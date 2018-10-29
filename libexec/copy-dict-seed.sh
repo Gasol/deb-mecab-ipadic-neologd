@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (C) 2015-2016 Toshinori Sato (@overlast)
+# Copyright (C) 2015-2018 Toshinori Sato (@overlast)
 #
 #       https://github.com/neologd/mecab-ipadic-neologd
 #
@@ -21,6 +21,7 @@ set -u
 
 BASEDIR=$(cd $(dirname $0);pwd)
 ECHO_PREFIX="[copy-dict-seed] :"
+GREP_OPTIONS=""
 
 echo "$ECHO_PREFIX Start.."
 

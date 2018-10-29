@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (C) 2015-2016 Toshinori Sato (@overlast)
+# Copyright (C) 2015-2018 Toshinori Sato (@overlast)
 #
 #       https://github.com/neologd/mecab-ipadic-neologd
 #
@@ -21,6 +21,7 @@ set -u
 
 BASEDIR=$(cd $(dirname $0);pwd)
 ECHO_PREFIX="[make-mecab-ipadic-NEologd] :"
+GREP_OPTIONS=""
 
 echo "$ECHO_PREFIX Start.."
 
@@ -62,8 +63,13 @@ WANNA_INSTALL_ADJECTIVE_EXP=0
 WANNA_IGNORE_ADJECTIVE_VERB=0
 WANNA_ELIMINATE_REDUNDANT_ENTRY=0
 COLUMN_EXTENSIONS_URLS=""
+WANNA_INSTALL_INFREQ_DATETIME=0
+WANNA_INSTALL_INFREQ_QUANTITY=0
+WANNA_IGNORE_ILL_FORMED_WORDS=0
+WANNA_INSTALL_ONLY_PATCHED_IPADIC=0
+WANNA_INSRALL_ALL_SEED_FILES=0
 
-while getopts p:s:l:S:L:u:B:J:O:H:t:T:j:E:G: OPT
+while getopts :p:s:l:S:L:u:B:J:O:H:t:T:j:E:D:Q:I:c:a:G: OPT
 do
   case $OPT in
     "p" ) INSTALL_DIR_PATH=$OPTARG ;;
@@ -80,6 +86,11 @@ do
     "T" ) WANNA_INSTALL_ADJECTIVE_EXP=$OPTARG ;;
     "j" ) WANNA_IGNORE_ADJECTIVE_VERB=$OPTARG ;;
     "E" ) WANNA_ELIMINATE_REDUNDANT_ENTRY=$OPTARG ;;
+    "D" ) WANNA_INSTALL_INFREQ_DATETIME=$OPTARG ;;
+    "Q" ) WANNA_INSTALL_INFREQ_QUANTITY=$OPTARG ;;
+    "I" ) WANNA_IGNORE_ILL_FORMED_WORDS=$OPTARG ;;
+    "c" ) WANNA_INSTALL_ONLY_PATCHED_IPADIC=$OPTARG ;;
+    "a" ) WANNA_INSRALL_ALL_SEED_FILES=$OPTARG ;;
     "G" ) COLUMN_EXTENSIONS_URLS=$OPTARG ;;
   esac
 done
@@ -87,7 +98,7 @@ done
 LIBS=-liconv ./configure --prefix=${INSTALL_DIR_PATH} --with-charset=utf8
 
 echo "${ECHO_PREFIX} Encode the character encoding of system dictionary resources from EUC_JP to UTF-8"
-sed -i -e "s|${MECAB_DIC_DIR}/ipadic|${INSTALL_DIR_PATH}|p" ${NEOLOGD_DIC_DIR}/Makefile
+sed -i -e "s|${MECAB_DIC_DIR}/ipadic\n|${INSTALL_DIR_PATH}\n|g" ${NEOLOGD_DIC_DIR}/Makefile
 
 find . -type f | xargs file | grep ".csv" | cut -d: -f1 | xargs -t -I{} ./../libexec/iconv_euc_to_utf8.sh {}
 find . -type f | xargs file | grep ".csv" | grep -v ".utf8" | cut -d: -f1 | xargs -t -I{} rm {}
@@ -113,62 +124,106 @@ patch < ${BASEDIR}/../misc/patch/Noun.verbal.csv.20160421.diff
 patch < ${BASEDIR}/../misc/patch/Prefix.csv.20160421.diff
 patch < ${BASEDIR}/../misc/patch/Suffix.csv.20160421.diff
 #patch < ${BASEDIR}/../misc/patch/Symbol.csv.20160421.diff
+patch < ${BASEDIR}/../misc/patch/Noun.proper.csv.20160519.diff
+patch < ${BASEDIR}/../misc/patch/Noun.csv.20160923.diff
+patch < ${BASEDIR}/../misc/patch/Noun.name.csv.20160923.diff
+patch < ${BASEDIR}/../misc/patch/Noun.org.csv.20160923.diff
+patch < ${BASEDIR}/../misc/patch/Noun.place.csv.20160923.diff
+patch < ${BASEDIR}/../misc/patch/Noun.proper.csv.20160923.diff
+patch < ${BASEDIR}/../misc/patch/Noun.verbal.csv.20160923.diff
+patch < ${BASEDIR}/../misc/patch/Noun.name.csv.20161005.diff
+patch < ${BASEDIR}/../misc/patch/Noun.org.csv.20161005.diff
+patch < ${BASEDIR}/../misc/patch/Noun.place.csv.20161005.diff
+patch < ${BASEDIR}/../misc/patch/Noun.proper.csv.20161005.diff
+patch < ${BASEDIR}/../misc/patch/Suffix.csv.20161027.diff
+patch < ${BASEDIR}/../misc/patch/Noun.demonst.csv.20170228.diff
+patch < ${BASEDIR}/../misc/patch/Noun.csv.20170317.diff
+patch < ${BASEDIR}/../misc/patch/Noun.name.csv.20170317.diff
 
 echo "${ECHO_PREFIX} Copy user dictionary resource"
 SEED_FILE_NAME=mecab-user-dict-seed.${YMD}.csv
-cp ${BASEDIR}/../seed/${SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-unxz ${NEOLOGD_DIC_DIR}/${SEED_FILE_NAME}.xz
+
+if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+    cp ${BASEDIR}/../seed/${SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+    unxz ${NEOLOGD_DIC_DIR}/${SEED_FILE_NAME}.xz
+fi
 
 ADVERB_SEED_FILE_NAME=neologd-adverb-dict-seed.20150623.csv
 if [ -f ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_IGNORE_ADVERB=0
+    fi
     if [ ${WANNA_IGNORE_ADVERB} -gt 0 ]; then
         echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}.xz"
     else
-        echo "${ECHO_PREFIX} Install adverb entries using ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${ADVERB_SEED_FILE_NAME}.xz
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install adverb entries using ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${ADVERB_SEED_FILE_NAME}.xz
+        fi
     fi
 else
     echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME} isn't there"
     echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${ADVERB_SEED_FILE_NAME}"
 fi
 
-INTERJECT_SEED_FILE_NAME=neologd-interjection-dict-seed.20151022.csv
+INTERJECT_SEED_FILE_NAME=neologd-interjection-dict-seed.20170216.csv
 if [ -f ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_IGNORE_INTERJECT=0
+    fi
     if [ ${WANNA_IGNORE_INTERJECT} -gt 0 ]; then
         echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}.xz"
     else
-        echo "${ECHO_PREFIX} Install interjection entries using ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${INTERJECT_SEED_FILE_NAME}.xz
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install interjection entries using ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${INTERJECT_SEED_FILE_NAME}.xz
+        fi
     fi
 else
     echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME} isn't there"
     echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${INTERJECT_SEED_FILE_NAME}"
 fi
 
-NOUN_ORTHO_SEED_FILE_NAME=neologd-common-noun-ortho-variant-dict-seed.20150323.csv
-if [ -f ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz ]; then
-    if [ ${WANNA_IGNORE_NOUN_ORTHO} -gt 0 ]; then
-        echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz"
+NOUN_ORTHO_SEED_FILE_NAME_LIST=()
+NOUN_ORTHO_SEED_FILE_NAME_LIST[0]=neologd-common-noun-ortho-variant-dict-seed.20170228.csv
+NOUN_ORTHO_SEED_FILE_NAME_LIST[1]=neologd-proper-noun-ortho-variant-dict-seed.20161110.csv
+for (( I = 0; I < ${#NOUN_ORTHO_SEED_FILE_NAME_LIST[@]}; ++I ))
+do
+    NOUN_ORTHO_SEED_FILE_NAME=${NOUN_ORTHO_SEED_FILE_NAME_LIST[${I}]}
+    if [ -f ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz ]; then
+        if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+            WANNA_IGNORE_NOUN_ORTHO=0
+        fi
+        if [ ${WANNA_IGNORE_NOUN_ORTHO} -gt 0 ]; then
+            echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz"
+        else
+            if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+                echo "${ECHO_PREFIX} Install noun orthographic variant entries using ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz"
+                cp ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+                unxz ${NEOLOGD_DIC_DIR}/${NOUN_ORTHO_SEED_FILE_NAME}.xz
+            fi
+        fi
     else
-        echo "${ECHO_PREFIX} Install common noun orthographic variant entries using ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${NOUN_ORTHO_SEED_FILE_NAME}.xz
+        echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME} isn't there"
+        echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}"
     fi
-else
-    echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME} isn't there"
-    echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${NOUN_ORTHO_SEED_FILE_NAME}"
-fi
+done
 
 NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME=neologd-noun-sahen-conn-ortho-variant-dict-seed.20160323.csv
 if [ -f ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_IGNORE_NOUN_SAHEN_CONN_ORTHO=0
+    fi
     if [ ${WANNA_IGNORE_NOUN_SAHEN_CONN_ORTHO} -gt 0 ]; then
         echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz"
     else
-        echo "${ECHO_PREFIX} Install entries of orthographic variant of a noun used as verb form using ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install entries of orthographic variant of a noun used as verb form using ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME}.xz
+        fi
     fi
 else
     echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${NOUN_SAHEN_CONN_ORTHO_SEED_FILE_NAME} isn't there"
@@ -177,12 +232,17 @@ fi
 
 ADJECTIVE_STD_SEED_FILE_NAME=neologd-adjective-std-dict-seed.20151126.csv
 if [ -f ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_IGNORE_ADJECTIVE_STD=0
+    fi
     if [ ${WANNA_IGNORE_ADJECTIVE_STD} -gt 0 ]; then
         echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME}.xz"
     else
-        echo "${ECHO_PREFIX} Install frequent adjective orthographic variant entries using ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${ADJECTIVE_STD_SEED_FILE_NAME}.xz
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install frequent adjective orthographic variant entries using ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${ADJECTIVE_STD_SEED_FILE_NAME}.xz
+        fi
     fi
 else
     echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${ADJECTIVE_STD_SEED_FILE_NAME} isn't there"
@@ -191,10 +251,15 @@ fi
 
 ADJECTIVE_EXP_SEED_FILE_NAME=neologd-adjective-exp-dict-seed.20151126.csv
 if [ -f ${BASEDIR}/../seed/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_INSTALL_ADJECTIVE_EXP=1
+    fi
     if [ ${WANNA_INSTALL_ADJECTIVE_EXP} -gt 0 ]; then
-        echo "${ECHO_PREFIX} Install infrequent adjective orthographic variant entries using ${BASEDIR}/../seed/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install infrequent adjective orthographic variant entries using ${BASEDIR}/../seed/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz
+        fi
     else
         echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${ADJECTIVE_EXP_SEED_FILE_NAME}.xz"
         echo "${ECHO_PREFIX}     When you install ${ADJECTIVE_EXP_SEED_FILE_NAME}.xz, please set --install_adjective_exp option"
@@ -207,17 +272,85 @@ fi
 
 ADJECTIVE_VERB_SEED_FILE_NAME=neologd-adjective-verb-dict-seed.20160324.csv
 if [ -f ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_IGNORE_ADJECTIVE_VERB=0
+    fi
     if [ ${WANNA_IGNORE_ADJECTIVE_VERB} -gt 0 ]; then
         echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz"
     else
-        echo "${ECHO_PREFIX} Install adjective verb orthographic variant entries using ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz"
-        cp ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
-        unxz ${NEOLOGD_DIC_DIR}/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install adjective verb orthographic variant entries using ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${ADJECTIVE_VERB_SEED_FILE_NAME}.xz
+        fi
     fi
 else
     echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME} isn't there"
     echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${ADJECTIVE_VERB_SEED_FILE_NAME}"
 fi
+
+INFREQ_DATETIME_SEED_FILE_NAME=neologd-date-time-infreq-dict-seed.20170224.csv
+if [ -f ${BASEDIR}/../seed/${INFREQ_DATETIME_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_INSTALL_INFREQ_DATETIME=1
+    fi
+    if [ ${WANNA_INSTALL_INFREQ_DATETIME} -gt 0 ]; then
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install infrequent datetime representation entries using ${BASEDIR}/../seed/${INFREQ_DATETIME_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${INFREQ_DATETIME_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${INFREQ_DATETIME_SEED_FILE_NAME}.xz
+        fi
+    else
+        echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${INFREQ_DATETIME_SEED_FILE_NAME}.xz"
+        echo "${ECHO_PREFIX}     When you install ${INFREQ_DATETIME_SEED_FILE_NAME}.xz, please set --install_infreq_datetime option"
+        echo
+    fi
+else
+    echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${INFREQ_DATETIME_SEED_FILE_NAME} isn't there"
+    echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${INFREQ_DATETIME_SEED_FILE_NAME}"
+fi
+
+INFREQ_QUANTITY_SEED_FILE_NAME=neologd-quantity-infreq-dict-seed.20170224.csv
+if [ -f ${BASEDIR}/../seed/${INFREQ_QUANTITY_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_INSTALL_INFREQ_QUANTITY=1
+    fi
+    if [ ${WANNA_INSTALL_INFREQ_QUANTITY} -gt 0 ]; then
+        if [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+            echo "${ECHO_PREFIX} Install infrequent quantity representation entries using ${BASEDIR}/../seed/${INFREQ_QUANTITY_SEED_FILE_NAME}.xz"
+            cp ${BASEDIR}/../seed/${INFREQ_QUANTITY_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+            unxz ${NEOLOGD_DIC_DIR}/${INFREQ_QUANTITY_SEED_FILE_NAME}.xz
+        fi
+    else
+        echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${INFREQ_QUANTITY_SEED_FILE_NAME}.xz"
+        echo "${ECHO_PREFIX}     When you install ${INFREQ_QUANTITY_SEED_FILE_NAME}.xz, please set --install_infreq_quantity option"
+        echo
+    fi
+else
+    echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${INFREQ_QUANTITY_SEED_FILE_NAME} isn't there"
+    echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${INFREQ_QUANTITY_SEED_FILE_NAME}"
+fi
+
+ILL_FORMED_WORDS_SEED_FILE_NAME=neologd-ill-formed-words-dict-seed.20170127.csv
+if [ -f ${BASEDIR}/../seed/${ILL_FORMED_WORDS_SEED_FILE_NAME}.xz ]; then
+    if [ ${WANNA_INSRALL_ALL_SEED_FILES} -gt 0 ]; then
+        WANNA_IGNORE_ILL_FORMED_WORDS=0
+    fi
+    if [ ${WANNA_IGNORE_ILL_FORMED_WORDS} -gt 0 ]; then
+        echo "${ECHO_PREFIX} Not install ${BASEDIR}/../seed/${ILL_FORMED_WORDS_SEED_FILE_NAME}.xz"
+        echo "${ECHO_PREFIX}     When you install ${ILL_FORMED_WORDS_SEED_FILE_NAME}.xz, please set --install_ill_formed_words option"
+        echo
+    elif [ ${WANNA_INSTALL_ONLY_PATCHED_IPADIC} -eq 0 ]; then
+        echo "${ECHO_PREFIX} Install entries of ill formed words using ${BASEDIR}/../seed/${ILL_FORMED_WORDS_SEED_FILE_NAME}.xz"
+        cp ${BASEDIR}/../seed/${ILL_FORMED_WORDS_SEED_FILE_NAME}.xz ${NEOLOGD_DIC_DIR}
+        unxz ${NEOLOGD_DIC_DIR}/${ILL_FORMED_WORDS_SEED_FILE_NAME}.xz
+    fi
+else
+    echo "${ECHO_PREFIX} ${BASEDIR}/../seed/${ILL_FORMED_WORDS_SEED_FILE_NAME} isn't there"
+    echo "${ECHO_PREFIX} We can't intall ${BASEDIR}/../seed/${ILL_FORMED_WORDS_SEED_FILE_NAME}"
+fi
+
+
 
 SEED_FILE_NAMES=($(find ${NEOLOGD_DIC_DIR}/* -name "*.csv"))
 
@@ -306,5 +439,7 @@ ${MECAB_LIBEXEC_DIR}/mecab-dict-index -f UTF8 -t UTF8
 
 echo "${ECHO_PREFIX} Make custom system dictionary on ${BASEDIR}/${NEOLOGD_DIC_DIR}"
 make
+# for Ubuntu Linux on Windows 10
+sed -i -e "s|${MECAB_DIC_DIR}/ipadic|${INSTALL_DIR_PATH}|g" ${NEOLOGD_DIC_DIR}/Makefile
 
 echo "$ECHO_PREFIX Finish.."
