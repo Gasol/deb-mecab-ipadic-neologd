@@ -1,3 +1,9 @@
+mecab-ipadic-neologd (0.0.6-1bintray1~stretch) stretch; urgency=low
+
+  * New upstream version
+
+ -- Gasol Wu <gasol.wu@gmail.com>  Mon, 29 Oct 2018 18:01:18 +0800
+
 mecab-ipadic-neologd (0.0.5-1bintray2~stretch) stretch; urgency=low
 
   * Remove empty directory /usr/lib/mecab/dic/ipadic-neologd
