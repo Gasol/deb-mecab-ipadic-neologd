@@ -2,11 +2,11 @@
 8383da84e57967c0a2aa794bc615a41d4558b67e
 8383da84e57967c0a2aa794bc615a41d4558b67e
 83a41be94b4cbdff32509a7d60ac16c0e150d402
-83a41be94b4cbdff32509a7d60ac16c0e150d402
-mecab-ipadic-neologd_0.0.5.orig.tar.gz
-8080bc6c8f8db289c588ff1b1159e7b9758546ac
-50093937
-component:0d9d021853ba4bb4adfa782ea450e55bfe1a229b:12208105:mecab-ipadic-neologd_0.0.5.orig-ipadic.tar.gz
+99a982002dd752202618c4486d28ce1d8ce13644
+mecab-ipadic-neologd_0.0.6.orig.tar.gz
+b1e22b9051612f9f66f054cc09e5f8a1469601d7
+59418798
 debianTag="debian/%e%v"
 patchedTag="patched/%e%v"
 upstreamTag="upstream/%e%u"
+component:0d9d021853ba4bb4adfa782ea450e55bfe1a229b:12208105:mecab-ipadic-neologd_0.0.6.orig-ipadic.tar.gz
