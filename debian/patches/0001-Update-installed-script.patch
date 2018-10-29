@@ -1,32 +1,32 @@
-From 8383da84e57967c0a2aa794bc615a41d4558b67e Mon Sep 17 00:00:00 2001
+From b3e62f01cf1671058b5f72f53b5903f7a53148c7 Mon Sep 17 00:00:00 2001
 From: Gasol Wu <gasol.wu@gmail.com>
 Date: Tue, 9 Aug 2016 15:41:39 +0800
 Subject: Update installed script
 
 ---
  bin/install-mecab-ipadic-neologd        |  2 +-
- libexec/install-mecab-ipadic-neologd.sh | 11 ++----
- libexec/make-mecab-ipadic-neologd.sh    | 62 +++------------------------------
- 3 files changed, 7 insertions(+), 68 deletions(-)
+ libexec/install-mecab-ipadic-neologd.sh | 11 +----
+ libexec/make-mecab-ipadic-neologd.sh    | 72 ++-------------------------------
+ 3 files changed, 7 insertions(+), 78 deletions(-)
 
 diff --git a/bin/install-mecab-ipadic-neologd b/bin/install-mecab-ipadic-neologd
-index d462e39..20a023f 100755
+index b64a5ee..6336cee 100755
 --- a/bin/install-mecab-ipadic-neologd
 +++ b/bin/install-mecab-ipadic-neologd
-@@ -256,7 +256,7 @@ fi
+@@ -320,7 +320,7 @@ fi
  echo "$ECHO_PREFIX Start.."
  
  echo "$ECHO_PREFIX Check the existance of libraries"
--COMMANDS=(find sort head cut egrep mecab mecab-config make curl sed cat diff tar unxz xargs grep iconv patch which file openssl)
-+COMMANDS=(find sort head cut egrep mecab mecab-config make sed cat diff tar unxz xargs grep iconv patch which file)
+-COMMANDS=(find sort head cut egrep mecab mecab-config make curl sed cat diff tar unxz xargs grep iconv patch which file openssl awk)
++COMMANDS=(find sort head cut egrep mecab mecab-config make sed cat diff tar unxz xargs grep iconv patch which file awk)
  for COMMAND in ${COMMANDS[@]};do
      if [ ! `which ${COMMAND}` ]; then
          echo "$ECHO_PREFIX     ${COMMAND} is not found."
 diff --git a/libexec/install-mecab-ipadic-neologd.sh b/libexec/install-mecab-ipadic-neologd.sh
-index f8589a6..ef63534 100755
+index 8dad326..db0bd6d 100755
 --- a/libexec/install-mecab-ipadic-neologd.sh
 +++ b/libexec/install-mecab-ipadic-neologd.sh
-@@ -25,18 +25,11 @@ ECHO_PREFIX="[install-mecab-ipadic-NEologd] :"
+@@ -25,18 +25,11 @@ GREP_OPTIONS=""
  
  echo "$ECHO_PREFIX Start.."
  
@@ -45,13 +45,13 @@ index f8589a6..ef63534 100755
 -INSTALL_DIR_PATH=${MECAB_DIC_DIR}/mecab-ipadic-neologd
 +INSTALL_DIR_PATH=${MECAB_DIC_DIR}/ipadic-neologd
  INSTALL_AS_USER=0
+ INSTALL_AS_SUDOER=0
  
- while getopts p:u: OPT
 diff --git a/libexec/make-mecab-ipadic-neologd.sh b/libexec/make-mecab-ipadic-neologd.sh
-index 479ceaf..d42614d 100755
+index f310bdc..3cb44ef 100755
 --- a/libexec/make-mecab-ipadic-neologd.sh
 +++ b/libexec/make-mecab-ipadic-neologd.sh
-@@ -40,61 +40,7 @@ if [ ! -e ${BASEDIR}/../seed/mecab-user-dict-seed.${YMD}.csv.xz ]; then
+@@ -41,71 +41,7 @@ if [ ! -e ${BASEDIR}/../seed/mecab-user-dict-seed.${YMD}.csv.xz ]; then
      exit 1;
  fi
  
@@ -78,18 +78,28 @@ index 479ceaf..d42614d 100755
 -        exit 1
 -    fi
 -
--    curl --insecure -L "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM" -o "${ORG_DIC_NAME}.tar.gz"
--    if [ $? != 0 ]; then
--        echo ""
--        echo "$ECHO_PREFIX Failed to download $ORG_DIC_NAME"
--        echo "$ECHO_PREFIX Please check your network to download 'https://mecab.googlecode.com/files/${ORG_DIC_NAME}.tar.gz'"
--        exit 1;
--    fi
+-    ORG_DIC_URL_LIST=()
+-    # download from google drive
+-    ORG_DIC_URL_LIST[0]="https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
+-    # download from ja.osdn.net
+-    ORG_DIC_URL_LIST[1]="https://ja.osdn.net/frs/g_redir.php?m=kent&f=mecab%2Fmecab-ipadic%2F2.7.0-20070801%2F${ORG_DIC_NAME}.tar.gz"
+-    for (( I = 0; I < ${#ORG_DIC_URL_LIST[@]}; ++I ))
+-    do
+-        curl --insecure -L "${ORG_DIC_URL_LIST[${I}]}" -o "${ORG_DIC_NAME}.tar.gz"
+-        if [ $? != 0 ]; then
+-            echo ""
+-            echo "$ECHO_PREFIX Failed to download $ORG_DIC_NAME"
+-            echo "$ECHO_PREFIX Please check your network to download '${ORG_DIC_URL_LIST[${I}]}'"
+-            exit 1;
+-        elif [ `openssl sha1 ${BASEDIR}/../build/${ORG_DIC_NAME}.tar.gz | cut -d $' ' -f 2,2` == "0d9d021853ba4bb4adfa782ea450e55bfe1a229b" ]; then
+-            break 1
+-        fi
+-    done
 -else
 -    echo "$ECHO_PREFIX Original mecab-ipadic file is already there."
 -fi
 -
--if [ `openssl sha1 ${BASEDIR}/../build/mecab-ipadic-2.7.0-20070801.tar.gz | cut -d $' ' -f 2,2` != "0d9d021853ba4bb4adfa782ea450e55bfe1a229b" ]; then
+-if [ `openssl sha1 ${BASEDIR}/../build/${ORG_DIC_NAME}.tar.gz | cut -d $' ' -f 2,2` != "0d9d021853ba4bb4adfa782ea450e55bfe1a229b" ]; then
 -    echo "$ECHO_PREFIX Fail to download ${BASEDIR}/../build/${ORG_DIC_NAME}.tar.gz"
 -    echo "$ECHO_PREFIX You should remove ${BASEDIR}/../build/${ORG_DIC_NAME}.tar.gz before retrying to install mecab-ipadic-NEologd"
 -    echo "$ECHO_PREFIX        rm -rf ${BASEDIR}/../build/${ORG_DIC_NAME}"
@@ -114,9 +124,9 @@ index 479ceaf..d42614d 100755
  cd ${NEOLOGD_DIC_DIR}
  
  MECAB_PATH=`which mecab`
-@@ -143,9 +89,9 @@ LIBS=-liconv ./configure --prefix=${INSTALL_DIR_PATH} --with-charset=utf8
+@@ -164,9 +100,9 @@ LIBS=-liconv ./configure --prefix=${INSTALL_DIR_PATH} --with-charset=utf8
  echo "${ECHO_PREFIX} Encode the character encoding of system dictionary resources from EUC_JP to UTF-8"
- sed -i -e "s|${MECAB_DIC_DIR}/ipadic|${INSTALL_DIR_PATH}|p" ${NEOLOGD_DIC_DIR}/Makefile
+ sed -i -e "s|${MECAB_DIC_DIR}/ipadic\n|${INSTALL_DIR_PATH}\n|g" ${NEOLOGD_DIC_DIR}/Makefile
  
 -find . -type f | xargs file | grep ".csv" | cut -d: -f1 | xargs -t -I{} ./../../libexec/iconv_euc_to_utf8.sh {}
 +find . -type f | xargs file | grep ".csv" | cut -d: -f1 | xargs -t -I{} ./../libexec/iconv_euc_to_utf8.sh {}
@@ -126,12 +136,12 @@ index 479ceaf..d42614d 100755
  find . -type f | xargs file | grep ".def" | grep -v ".utf8" | cut -d: -f1 | xargs -t -I{} rm {}
  find . -type f | xargs file | grep  ".utf8" | cut -d: -f1 |  sed -e "s|.utf8||" |  xargs -t -I{} mv {}.utf8 {}
  
-@@ -358,7 +304,7 @@ cd ${NEOLOGD_DIC_DIR}
+@@ -501,7 +437,7 @@ cd ${NEOLOGD_DIC_DIR}
  echo "${ECHO_PREFIX} Re-Index system dictionary"
  ${MECAB_LIBEXEC_DIR}/mecab-dict-index -f UTF8 -t UTF8
  
 -echo "${ECHO_PREFIX} Make custom system dictionary on ${BASEDIR}/../build/${NEOLOGD_DIC_NAME}"
 +echo "${ECHO_PREFIX} Make custom system dictionary on ${BASEDIR}/${NEOLOGD_DIC_DIR}"
  make
- 
- echo "$ECHO_PREFIX Finish.."
+ # for Ubuntu Linux on Windows 10
+ sed -i -e "s|${MECAB_DIC_DIR}/ipadic|${INSTALL_DIR_PATH}|g" ${NEOLOGD_DIC_DIR}/Makefile
